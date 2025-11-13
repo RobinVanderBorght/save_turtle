@@ -137,7 +137,7 @@ export default function TurtleEvadeGame() {
         if (gameOver) return;
 
         const update = () => {
-            const turtleY = screen.height - turtleSize - 20;
+            const turtleY = screen.height - turtleSize - 35;
 
             setTrash((prev) =>
                 prev
@@ -229,7 +229,7 @@ export default function TurtleEvadeGame() {
             {/* TURTLE */}
             <motion.div
                 className="absolute select-none"
-                animate={{ x: turtleX, y: screen.height - turtleSize - 20 }}
+                animate={{ x: turtleX, y: screen.height - turtleSize - 35 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 style={{ fontSize: `${turtleSize}px` }}
             >
