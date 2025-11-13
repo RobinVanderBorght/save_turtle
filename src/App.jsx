@@ -17,7 +17,7 @@ const SEA_FACTS = [
 ];
 
 export default function TurtleEvadeGame() {
-
+    const [difficulty, setDifficulty] = useState(1);
     const [turtleX, setTurtleX] = useState(window.innerWidth / 2);
     const [trash, setTrash] = useState([]);
     const [bubbles, setBubbles] = useState([]);
@@ -118,63 +118,53 @@ export default function TurtleEvadeGame() {
     // FACT POPUP EVERY 10 SECONDS
     // --------------------------
     useEffect(() => {
-        if (gameOver) return;
+    if (gameOver) return;
 
-        const interval = setInterval(() => {
-            const fact = SEA_FACTS[Math.floor(Math.random() * SEA_FACTS.length)];
-            setFactPopup(fact);
+    let startTime = performance.now(); // track how long game has been running
 
-            setTimeout(() => setFactPopup(null), 3000);
-        }, 10000);
+    const update = (time) => {
+        const elapsed = (time - startTime) / 1000; // seconds since game start
 
-        return () => clearInterval(interval);
-    }, [gameOver]);
+        // ⭐ Medium difficulty increase: every 10s → +0.25 speed
+        const difficultyMultiplier = 1 + Math.floor(elapsed / 10) * 0.25;
 
-    // --------------------------
-    // GAME LOOP
-    // --------------------------
-    useEffect(() => {
-        if (gameOver) return;
+        const turtleY = screen.height - turtleSize - 20;
 
         const update = () => {
             const turtleY = screen.height - turtleSize - 35;
 
-            setTrash((prev) =>
-                prev
-                    .map((t) => ({ ...t, y: t.y + fallSpeed }))
-                    .filter((t) => {
-                        const hit =
-                            t.x < turtleX + turtleSize &&
-                            t.x + trashSize > turtleX &&
-                            t.y < turtleY + turtleSize &&
-                            t.y + trashSize > turtleY;
+                    if (hit) {
+                        setGameOver(true);
+                        return false;
+                    }
 
-                        if (hit) {
-                            setGameOver(true);
-                            return false;
-                        }
+                    // Score
+                    if (t.y > screen.height) {
+                        setScore((s) => s + 1);
+                        return false;
+                    }
 
-                        if (t.y > screen.height) {
-                            setScore((s) => s + 1);
-                            return false;
-                        }
+                    return true;
+                })
+        );
 
-                        return true;
-                    })
-            );
-
-            setBubbles((prev) =>
-                prev
-                    .map((b) => ({ ...b, y: b.y - b.speed }))
-                    .filter((b) => b.y + b.size > -50)
-            );
-
-            requestRef.current = requestAnimationFrame(update);
-        };
+        // MOVE BUBBLES
+        setBubbles((prev) =>
+            prev
+                .map((b) => ({
+                    ...b,
+                    y: b.y - b.speed,
+                }))
+                .filter((b) => b.y + b.size > -50)
+        );
 
         requestRef.current = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(requestRef.current);
-    });
+    };
+
+    requestRef.current = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(requestRef.current);
+}, [gameOver, screen.height, screen.width, turtleX, turtleSize, trashSize]);
+
 
     // --------------------------
     // RESET GAME
