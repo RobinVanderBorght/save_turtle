@@ -3,34 +3,34 @@ import { motion } from "framer-motion";
 
 const TRASH_TYPES = ["💻", "📱", "🔋", "🖨️", "🖥️"];
 
-export default function App() {
-    const [turtle, setTurtle] = useState({
-        x: window.innerWidth / 2,
-        y: window.innerHeight - 150,
-    });
+export default function TurtleEvadeGame() {
+    const [turtleX, setTurtleX] = useState(window.innerWidth / 2);
+    const [trash, setTrash] = useState([]);
+    const [bubbles, setBubbles] = useState([]);
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
+    const [screen, setScreen] = useState({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
 
-    const canvasRef = useRef(null);
-    const ctxRef = useRef(null);
-    const trashRef = useRef([]);
-    const nextTrashId = useRef(0);
-    const animationRef = useRef(null);
+    const requestRef = useRef();
 
-    // Setup canvas
+    const turtleSize = screen.height * 0.12;
+    const trashSize = screen.height * 0.08;
+    const fallSpeed = screen.height * 0.004;
+
+    // Resize
     useEffect(() => {
-        const canvas = canvasRef.current;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        ctxRef.current = canvas.getContext("2d");
-    }, []);
-
-    // Resize canvas dynamically
-    useEffect(() => {
+        let resizeTimer;
         const handleResize = () => {
-            const canvas = canvasRef.current;
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                setScreen({
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                });
+            }, 150);
         };
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
@@ -38,122 +38,245 @@ export default function App() {
 
     // Keyboard movement
     useEffect(() => {
-        const handleKey = (e) => {
-            if (gameOver) return;
-            const speed = 40;
-            setTurtle((pos) => {
-                let { x, y } = pos;
-                if (["ArrowUp", "w"].includes(e.key)) y -= speed;
-                if (["ArrowDown", "s"].includes(e.key)) y += speed;
-                if (["ArrowLeft", "a"].includes(e.key)) x -= speed;
-                if (["ArrowRight", "d"].includes(e.key)) x += speed;
-                return {
-                    x: Math.max(0, Math.min(window.innerWidth - 100, x)),
-                    y: Math.max(0, Math.min(window.innerHeight - 100, y)),
-                };
-            });
+        const handleKeyDown = (e) => {
+            if (e.key === "ArrowLeft")
+                setTurtleX((x) => Math.max(x - screen.width * 0.05, 0));
+            if (e.key === "ArrowRight")
+                setTurtleX((x) =>
+                    Math.min(x + screen.width * 0.05, screen.width - turtleSize)
+                );
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [screen.width, turtleSize]);
 
-    // Spawn ewaste (no re-render)
-    const spawnTrash = useCallback(() => {
-        if (gameOver) return;
-        trashRef.current.push({
-            id: nextTrashId.current++,
-            x: Math.random() * (window.innerWidth - 80),
-            y: -50,
-            speed: 2 + Math.random() * 4,
-            size: 40 + Math.random() * 30,
-            emoji: EWASTE_TYPES[Math.floor(Math.random() * EWASTE_TYPES.length)],
-            active: true,
-        });
-    }, [gameOver]);
-
+    // Spawn trash
     useEffect(() => {
         if (gameOver) return;
-        const interval = setInterval(spawnTrash, 700);
+        const interval = setInterval(() => {
+            const newTrash = {
+                id: crypto.randomUUID(),
+                x: Math.random() * (screen.width - trashSize),
+                y: -trashSize,
+                type: TRASH_TYPES[Math.floor(Math.random() * TRASH_TYPES.length)],
+            };
+            setTrash((prev) => [...prev, newTrash]);
+        }, 600);
         return () => clearInterval(interval);
-    }, [spawnTrash, gameOver]);
+    }, [gameOver, screen.width, trashSize]);
 
-    // Game loop using canvas
-    const gameLoop = useCallback(() => {
-        const ctx = ctxRef.current;
-        if (!ctx) return;
-        const turtleX = turtle.x;
-        const turtleY = turtle.y;
-
-        // Clear frame
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-        // Draw trash
-        ctx.font = "bold 48px serif";
-        for (const t of trashRef.current) {
-            t.y += t.speed;
-            ctx.fillText(t.emoji, t.x, t.y);
-
-            // Collision detection
-            if (Math.abs(t.x - turtleX) < 70 && Math.abs(t.y - turtleY) < 70) {
-                setGameOver(true);
-                cancelAnimationFrame(animationRef.current);
-                return;
-            }
-
-            // Scoring (item avoided)
-            if (t.y > window.innerHeight && t.active) {
-                t.active = false;
-                setScore((s) => s + 1);
-            }
-        }
-
-        // Clean up off-screen trash
-        trashRef.current = trashRef.current.filter((t) => t.y < window.innerHeight + 100);
-
-        animationRef.current = requestAnimationFrame(gameLoop);
-    }, [turtle]);
-
+    // Spawn background bubbles
     useEffect(() => {
-        if (!gameOver) animationRef.current = requestAnimationFrame(gameLoop);
-        return () => cancelAnimationFrame(animationRef.current);
-    }, [gameLoop, gameOver]);
+        const interval = setInterval(() => {
+            const bubble = {
+                id: crypto.randomUUID(),
+                x: Math.random() * screen.width,
+                y: screen.height + 60,
+                size: 10 + Math.random() * 30,
+                speed: 0.5 + Math.random() * 1.5,
+            };
+            setBubbles((prev) => [...prev, bubble]);
+        }, 400);
+        return () => clearInterval(interval);
+    }, [screen]);
 
-    const restart = () => {
-        trashRef.current = [];
+    // Game loop
+    useEffect(() => {
+        if (gameOver) return;
+
+        const update = () => {
+            const turtleY = screen.height - turtleSize - 20;
+
+            // Update trash
+            setTrash((prev) =>
+                prev
+                    .map((t) => ({
+                        ...t,
+                        y: t.y + fallSpeed,
+                    }))
+                    .filter((t) => {
+                        const collides =
+                            t.x < turtleX + turtleSize &&
+                            t.x + trashSize > turtleX &&
+                            t.y < turtleY + turtleSize &&
+                            t.y + trashSize > turtleY;
+
+                        if (collides) {
+                            setGameOver(true);
+                            return false;
+                        }
+
+                        if (t.y > screen.height) {
+                            setScore((s) => s + 1);
+                            return false;
+                        }
+
+                        return true;
+                    })
+            );
+
+            // Update bubbles
+            setBubbles((prev) =>
+                prev
+                    .map((b) => ({
+                        ...b,
+                        y: b.y - b.speed,
+                    }))
+                    .filter((b) => b.y + b.size > -50)
+            );
+
+            requestRef.current = requestAnimationFrame(update);
+        };
+
+        requestRef.current = requestAnimationFrame(update);
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [gameOver, screen.height, screen.width, turtleX, turtleSize, trashSize]);
+
+    const resetGame = () => {
+        setTrash([]);
+        setBubbles([]);
         setScore(0);
         setGameOver(false);
         setTurtleX(screen.width / 2);
     };
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden bg-gradient-to-b from-sky-300 to-sky-600 text-white">
-            {/* Canvas (trash layer) */}
-            <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full z-0"
-            />
-
-            {/* Turtle (above canvas) */}
-            <div className="absolute z-20">
-                <Turtle x={turtle.x} y={turtle.y} />
-            </div>
-
-            {/* Score UI (above turtle) */}
-            <div className="absolute top-4 left-4 bg-white/40 backdrop-blur-sm text-black px-4 py-1 rounded-xl font-semibold z-30">
+        <div
+            style={{
+                width: "100vw",
+                height: "100vh",
+                overflow: "hidden",
+                backgroundImage: "url('/bg.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
+            className="relative text-white"
+        >
+            {/* Score */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-4xl font-bold text-white drop-shadow-lg">
                 Score: {score}
             </div>
 
-            {/* Game Over Overlay */}
+            {/* Background bubbles */}
+            {bubbles.map((b) => (
+                <div
+                    key={b.id}
+                    style={{
+                        position: "absolute",
+                        left: b.x,
+                        top: b.y,
+                        width: b.size,
+                        height: b.size,
+                        borderRadius: "50%",
+                        border: "2px solid rgba(255,255,255,0.5)",
+                        background: "rgba(255,255,255,0.2)",
+                        boxShadow: "0 0 10px rgba(255,255,255,0.4)",
+                        pointerEvents: "none",
+                    }}
+                />
+            ))}
+
+            {/* Turtle */}
+            <motion.div
+                className="absolute select-none"
+                animate={{ x: turtleX, y: screen.height - turtleSize - 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                style={{ fontSize: `${turtleSize}px` }}
+            >
+                🐢
+            </motion.div>
+
+            {/* Trash */}
+            {trash.map((t) => (
+                <div
+                    key={t.id}
+                    style={{
+                        position: "absolute",
+                        left: t.x,
+                        top: t.y,
+                        fontSize: `${trashSize}px`,
+                        userSelect: "none",
+                    }}
+                >
+                    {t.type}
+                </div>
+            ))}
+
+            {/* GAME OVER — WOBBLING BUBBLE */}
             {gameOver && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 text-white text-4xl font-bold">
-                    <p>💀 Game Over!</p>
-                    <p className="mt-2 text-2xl">Final Score: {score}</p>
-                    <button
-                        onClick={resetGame}
-                        className="mt-6 bg-white text-black px-6 py-3 rounded-2xl text-lg font-semibold hover:bg-gray-200"
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                        className="pointer-events-auto flex flex-col items-center text-center"
                     >
-                        Restart
-                    </button>
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{
+                                scale: 1,
+                                rotate: [0, 2, -2, 2, -1, 1, 0],
+                                y: [0, -4, 3, -2, 1, -3, 0],
+                            }}
+                            transition={{
+                                duration: 5,
+                                repeat: Infinity,
+                                repeatType: "mirror",
+                            }}
+                            style={{
+                                width: 260,
+                                height: 260,
+                                borderRadius: "50%",
+                                background: "rgba(255,255,255,0.25)",
+                                backdropFilter: "blur(8px)",
+                                border: "4px solid rgba(255,255,255,0.7)",
+                                boxShadow: "0 0 25px rgba(255,255,255,0.6)",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                position: "relative",
+                            }}
+                        >
+                            {/* Highlight */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: 20,
+                                    left: 35,
+                                    width: 70,
+                                    height: 70,
+                                    borderRadius: "50%",
+                                    background: "rgba(255,255,255,0.45)",
+                                    filter: "blur(8px)",
+                                }}
+                            />
+
+                            <div className="text-5xl mb-2">💥</div>
+                            <div className="text-3xl font-bold text-white">Game Over</div>
+                            <div className="text-xl text-white mt-1 mb-4">Score: {score}</div>
+
+                            <button
+                                onClick={resetGame}
+                                className="bg-white text-black px-5 py-2 rounded-xl font-semibold hover:bg-gray-200 shadow-md"
+                            >
+                                Restart
+                            </button>
+                        </motion.div>
+
+                        {/* Bubble tail */}
+                        <div
+                            style={{
+                                width: 0,
+                                height: 0,
+                                borderLeft: "25px solid transparent",
+                                borderRight: "25px solid transparent",
+                                borderTop: "25px solid rgba(255,255,255,0.25)",
+                                marginTop: -5,
+                            }}
+                        />
+                    </motion.div>
                 </div>
             )}
         </div>
