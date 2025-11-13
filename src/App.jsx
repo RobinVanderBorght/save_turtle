@@ -18,22 +18,18 @@ const SEA_FACTS = [
 
 export default function TurtleEvadeGame() {
 
-    // --------------------------
-    // GAME STATE
-    // --------------------------
     const [turtleX, setTurtleX] = useState(window.innerWidth / 2);
     const [trash, setTrash] = useState([]);
     const [bubbles, setBubbles] = useState([]);
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
 
-    // FACT POPUP
+    // Fact bubble every 10 seconds
     const [factPopup, setFactPopup] = useState(null);
-    const [lastFactScore, setLastFactScore] = useState(0);
 
     const [screen, setScreen] = useState({
         width: window.innerWidth,
-        height: window.innerHeight,
+        height: window.innerHeight
     });
 
     const requestRef = useRef();
@@ -43,16 +39,16 @@ export default function TurtleEvadeGame() {
     const fallSpeed = screen.height * 0.004;
 
     // --------------------------
-    // RESIZE
+    // SCREEN RESIZE
     // --------------------------
     useEffect(() => {
-        let resizeTimer;
+        let timer;
         const handleResize = () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
                 setScreen({
                     width: window.innerWidth,
-                    height: window.innerHeight,
+                    height: window.innerHeight
                 });
             }, 150);
         };
@@ -61,12 +57,13 @@ export default function TurtleEvadeGame() {
     }, []);
 
     // --------------------------
-    // KEYBOARD MOVEMENT
+    // PLAYER MOVEMENT
     // --------------------------
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === "ArrowLeft")
                 setTurtleX((x) => Math.max(x - screen.width * 0.05, 0));
+
             if (e.key === "ArrowRight")
                 setTurtleX((x) =>
                     Math.min(x + screen.width * 0.05, screen.width - turtleSize)
@@ -89,8 +86,8 @@ export default function TurtleEvadeGame() {
                     id: crypto.randomUUID(),
                     x: Math.random() * (screen.width - trashSize),
                     y: -trashSize,
-                    type: TRASH_TYPES[Math.floor(Math.random() * TRASH_TYPES.length)],
-                },
+                    type: TRASH_TYPES[Math.floor(Math.random() * TRASH_TYPES.length)]
+                }
             ]);
         }, 600);
 
@@ -98,7 +95,7 @@ export default function TurtleEvadeGame() {
     }, [gameOver, screen.width, trashSize]);
 
     // --------------------------
-    // BUBBLE SPAWN
+    // BACKGROUND BUBBLES
     // --------------------------
     useEffect(() => {
         const interval = setInterval(() => {
@@ -109,13 +106,29 @@ export default function TurtleEvadeGame() {
                     x: Math.random() * screen.width,
                     y: screen.height + 60,
                     size: 10 + Math.random() * 30,
-                    speed: 0.5 + Math.random() * 1.5,
-                },
+                    speed: 0.5 + Math.random() * 1.5
+                }
             ]);
         }, 400);
 
         return () => clearInterval(interval);
     }, [screen]);
+
+    // --------------------------
+    // FACT POPUP EVERY 10 SECONDS
+    // --------------------------
+    useEffect(() => {
+        if (gameOver) return;
+
+        const interval = setInterval(() => {
+            const fact = SEA_FACTS[Math.floor(Math.random() * SEA_FACTS.length)];
+            setFactPopup(fact);
+
+            setTimeout(() => setFactPopup(null), 3000);
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [gameOver]);
 
     // --------------------------
     // GAME LOOP
@@ -126,43 +139,23 @@ export default function TurtleEvadeGame() {
         const update = () => {
             const turtleY = screen.height - turtleSize - 20;
 
-            // MOVE TRASH
             setTrash((prev) =>
                 prev
                     .map((t) => ({ ...t, y: t.y + fallSpeed }))
                     .filter((t) => {
-                        const collision =
+                        const hit =
                             t.x < turtleX + turtleSize &&
                             t.x + trashSize > turtleX &&
                             t.y < turtleY + turtleSize &&
                             t.y + trashSize > turtleY;
 
-                        if (collision) {
+                        if (hit) {
                             setGameOver(true);
                             return false;
                         }
 
-                        // SCORE
                         if (t.y > screen.height) {
-                            setScore((oldScore) => {
-    const newScore = oldScore + 1;
-
-    if (newScore % 10 === 0) {
-        setLastFactScore((prev) => {
-            if (prev !== newScore) {
-                const fact = SEA_FACTS[Math.floor(Math.random() * SEA_FACTS.length)];
-                setFactPopup(fact);
-
-                // Hide after 3 seconds
-                setTimeout(() => setFactPopup(null), 3000);
-                return newScore; // update lastFactScore
-            }
-            return prev;
-        });
-    }
-
-    return newScore;
-});
+                            setScore((s) => s + 1);
                             return false;
                         }
 
@@ -170,7 +163,6 @@ export default function TurtleEvadeGame() {
                     })
             );
 
-            // MOVE BUBBLES
             setBubbles((prev) =>
                 prev
                     .map((b) => ({ ...b, y: b.y - b.speed }))
@@ -182,18 +174,10 @@ export default function TurtleEvadeGame() {
 
         requestRef.current = requestAnimationFrame(update);
         return () => cancelAnimationFrame(requestRef.current);
-    }, [
-        gameOver,
-        screen.height,
-        screen.width,
-        turtleX,
-        turtleSize,
-        trashSize,
-        lastFactScore,
-    ]);
+    });
 
     // --------------------------
-    // RESET
+    // RESET GAME
     // --------------------------
     const resetGame = () => {
         setTrash([]);
@@ -202,11 +186,10 @@ export default function TurtleEvadeGame() {
         setGameOver(false);
         setTurtleX(screen.width / 2);
         setFactPopup(null);
-        setLastFactScore(0);
     };
 
     // --------------------------
-    // UI RENDER
+    // UI
     // --------------------------
     return (
         <div
@@ -217,7 +200,7 @@ export default function TurtleEvadeGame() {
                 overflow: "hidden",
                 backgroundImage: "url('/bg.png')",
                 backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundPosition: "center"
             }}
         >
 
@@ -226,7 +209,7 @@ export default function TurtleEvadeGame() {
                 Score: {score}
             </div>
 
-            {/* BACKGROUND BUBBLES */}
+            {/* BUBBLES */}
             {bubbles.map((b) => (
                 <div
                     key={b.id}
@@ -238,7 +221,7 @@ export default function TurtleEvadeGame() {
                         height: b.size,
                         borderRadius: "50%",
                         border: "2px solid rgba(255,255,255,0.5)",
-                        background: "rgba(255,255,255,0.2)",
+                        background: "rgba(255,255,255,0.2)"
                     }}
                 />
             ))}
@@ -261,14 +244,14 @@ export default function TurtleEvadeGame() {
                         position: "absolute",
                         left: t.x,
                         top: t.y,
-                        fontSize: `${trashSize}px`,
+                        fontSize: `${trashSize}px`
                     }}
                 >
                     {t.type}
                 </div>
             ))}
 
-            {/* FACT POPUP EVERY 10 SCORE */}
+            {/* FACT POPUP */}
             {factPopup && !gameOver && (
                 <motion.div
                     initial={{ scale: 0, opacity: 0, y: 40 }}
@@ -287,77 +270,67 @@ export default function TurtleEvadeGame() {
                             color: "white",
                             fontSize: "20px",
                             fontWeight: "600",
-                            textAlign: "center",
+                            textAlign: "center"
                         }}
                     >
                         {factPopup}
                     </div>
                 </motion.div>
             )}
+
+            {/* GAME OVER BUBBLE */}
             {gameOver && (
-    <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 14 }}
-        className="absolute inset-0 flex items-center justify-center z-[9999]"
-        style={{
-            pointerEvents: "auto",
-            background: "transparent",   // ← fixed!
-        }}
-    >
-        <motion.div
-            animate={{
-                rotate: [0, 2, -2, 2, -1, 1, 0],
-                y: [0, -4, 3, -2, 1, -3, 0],
-            }}
-            transition={{
-                duration: 5,
-                repeat: Infinity,
-                repeatType: "mirror",
-            }}
-            style={{
-                width: 260,
-                height: 260,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.25)",
-                border: "4px solid rgba(255,255,255,0.7)",
-                backdropFilter: "blur(8px)",
-                boxShadow: "0 0 25px rgba(255,255,255,0.6)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                position: "relative",
-                textAlign: "center",
-            }}
-        >
-            {/* Highlight */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: 20,
-                    left: 35,
-                    width: 70,
-                    height: 70,
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,0.45)",
-                    filter: "blur(8px)",
-                }}
-            />
+                <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 14 }}
+                    className="absolute inset-0 flex items-center justify-center z-[9999]"
+                    style={{
+                        pointerEvents: "auto",
+                        background: "transparent"
+                    }}
+                >
+                    <motion.div
+                        animate={{
+                            rotate: [0, 2, -2, 2, -1, 1, 0],
+                            y: [0, -4, 3, -2, 1, -3, 0]
+                        }}
+                        transition={{
+                            duration: 5,
+                            repeat: Infinity,
+                            repeatType: "mirror"
+                        }}
+                        style={{
+                            width: 260,
+                            height: 260,
+                            borderRadius: "50%",
+                            background: "rgba(255,255,255,0.25)",
+                            border: "4px solid rgba(255,255,255,0.7)",
+                            backdropFilter: "blur(8px)",
+                            boxShadow: "0 0 25px rgba(255,255,255,0.6)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            position: "relative",
+                            textAlign: "center"
+                        }}
+                    >
+                        <div className="text-5xl mb-2">💥</div>
+                        <div className="text-3xl font-bold">Game Over</div>
+                        <div className="text-xl mt-1 mb-4">Score: {score}</div>
 
-            <div className="text-5xl mb-2">💥</div>
-            <div className="text-3xl font-bold">Game Over</div>
-            <div className="text-xl mt-1 mb-4">Score: {score}</div>
+                        <button
+                            onClick={resetGame}
+                            className="bg-white text-black px-5 py-2 rounded-xl font-semibold hover:bg-gray-200 shadow-md"
+                        >
+                            Restart
+                        </button>
+                    </motion.div>
+                </motion.div>
+            )}
 
-            <button
-                onClick={resetGame}
-                className="bg-white text-black px-5 py-2 rounded-xl font-semibold hover:bg-gray-200 shadow-md"
-            >
-                Restart
-            </button>
-        </motion.div>
-    </motion.div>
-)}  </div>
-);
+        </div>
+    );
 }
