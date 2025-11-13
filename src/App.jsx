@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 
 const TRASH_TYPES = ["💻", "📱", "🔋", "🖨️", "🖥️"];
 
-<<<<<<< HEAD
 const SEA_FACTS = [
     "Over 50 million tons of e-waste end up in nature every year.",
     "Sea turtles often mistake floating plastic and e-waste for food.",
@@ -19,20 +18,12 @@ const SEA_FACTS = [
 
 export default function TurtleEvadeGame() {
 
-=======
-export default function TurtleEvadeGame() {
->>>>>>> origin/main
     const [turtleX, setTurtleX] = useState(window.innerWidth / 2);
     const [trash, setTrash] = useState([]);
     const [bubbles, setBubbles] = useState([]);
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
-    const [screen, setScreen] = useState({
-        width: window.innerWidth,
-        height: window.innerHeight,
-    });
 
-<<<<<<< HEAD
     // Fact bubble every 10 seconds
     const [factPopup, setFactPopup] = useState(null);
 
@@ -43,15 +34,10 @@ export default function TurtleEvadeGame() {
 
     const requestRef = useRef();
 
-=======
-    const requestRef = useRef();
-
->>>>>>> origin/main
     const turtleSize = screen.height * 0.12;
     const trashSize = screen.height * 0.08;
     const fallSpeed = screen.height * 0.004;
 
-<<<<<<< HEAD
     // --------------------------
     // SCREEN RESIZE
     // --------------------------
@@ -63,17 +49,6 @@ export default function TurtleEvadeGame() {
                 setScreen({
                     width: window.innerWidth,
                     height: window.innerHeight
-=======
-    // Resize
-    useEffect(() => {
-        let resizeTimer;
-        const handleResize = () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                setScreen({
-                    width: window.innerWidth,
-                    height: window.innerHeight,
->>>>>>> origin/main
                 });
             }, 150);
         };
@@ -88,10 +63,7 @@ export default function TurtleEvadeGame() {
         const handleKeyDown = (e) => {
             if (e.key === "ArrowLeft")
                 setTurtleX((x) => Math.max(x - screen.width * 0.05, 0));
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
             if (e.key === "ArrowRight")
                 setTurtleX((x) =>
                     Math.min(x + screen.width * 0.05, screen.width - turtleSize)
@@ -101,7 +73,6 @@ export default function TurtleEvadeGame() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [screen.width, turtleSize]);
 
-<<<<<<< HEAD
     // --------------------------
     // TRASH SPAWN
     // --------------------------
@@ -208,90 +179,6 @@ export default function TurtleEvadeGame() {
     // --------------------------
     // RESET GAME
     // --------------------------
-=======
-    // Spawn trash
-    useEffect(() => {
-        if (gameOver) return;
-        const interval = setInterval(() => {
-            const newTrash = {
-                id: crypto.randomUUID(),
-                x: Math.random() * (screen.width - trashSize),
-                y: -trashSize,
-                type: TRASH_TYPES[Math.floor(Math.random() * TRASH_TYPES.length)],
-            };
-            setTrash((prev) => [...prev, newTrash]);
-        }, 600);
-        return () => clearInterval(interval);
-    }, [gameOver, screen.width, trashSize]);
-
-    // Spawn background bubbles
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const bubble = {
-                id: crypto.randomUUID(),
-                x: Math.random() * screen.width,
-                y: screen.height + 60,
-                size: 10 + Math.random() * 30,
-                speed: 0.5 + Math.random() * 1.5,
-            };
-            setBubbles((prev) => [...prev, bubble]);
-        }, 400);
-        return () => clearInterval(interval);
-    }, [screen]);
-
-    // Game loop
-    useEffect(() => {
-        if (gameOver) return;
-
-        const update = () => {
-            const turtleY = screen.height - turtleSize - 20;
-
-            // Update trash
-            setTrash((prev) =>
-                prev
-                    .map((t) => ({
-                        ...t,
-                        y: t.y + fallSpeed,
-                    }))
-                    .filter((t) => {
-                        const collides =
-                            t.x < turtleX + turtleSize &&
-                            t.x + trashSize > turtleX &&
-                            t.y < turtleY + turtleSize &&
-                            t.y + trashSize > turtleY;
-
-                        if (collides) {
-                            setGameOver(true);
-                            return false;
-                        }
-
-                        if (t.y > screen.height) {
-                            setScore((s) => s + 1);
-                            return false;
-                        }
-
-                        return true;
-                    })
-            );
-
-            // Update bubbles
-            setBubbles((prev) =>
-                prev
-                    .map((b) => ({
-                        ...b,
-                        y: b.y - b.speed,
-                    }))
-                    .filter((b) => b.y + b.size > -50)
-            );
-
-            requestRef.current = requestAnimationFrame(update);
-        };
-
-        requestRef.current = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(requestRef.current);
-    }, [gameOver, screen.height, screen.width, turtleX, turtleSize, trashSize]);
-
->>>>>>> origin/main
     const resetGame = () => {
         setTrash([]);
         setBubbles([]);
@@ -306,17 +193,13 @@ export default function TurtleEvadeGame() {
     // --------------------------
     return (
         <div
-<<<<<<< HEAD
             className="relative text-white"
-=======
->>>>>>> origin/main
             style={{
                 width: "100vw",
                 height: "100vh",
                 overflow: "hidden",
                 backgroundImage: "url('/bg.png')",
                 backgroundSize: "cover",
-<<<<<<< HEAD
                 backgroundPosition: "center"
             }}
         >
@@ -327,19 +210,6 @@ export default function TurtleEvadeGame() {
             </div>
 
             {/* BUBBLES */}
-=======
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-            }}
-            className="relative text-white"
-        >
-            {/* Score */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-4xl font-bold text-white drop-shadow-lg">
-                Score: {score}
-            </div>
-
-            {/* Background bubbles */}
->>>>>>> origin/main
             {bubbles.map((b) => (
                 <div
                     key={b.id}
@@ -351,22 +221,12 @@ export default function TurtleEvadeGame() {
                         height: b.size,
                         borderRadius: "50%",
                         border: "2px solid rgba(255,255,255,0.5)",
-<<<<<<< HEAD
                         background: "rgba(255,255,255,0.2)"
-=======
-                        background: "rgba(255,255,255,0.2)",
-                        boxShadow: "0 0 10px rgba(255,255,255,0.4)",
-                        pointerEvents: "none",
->>>>>>> origin/main
                     }}
                 />
             ))}
 
-<<<<<<< HEAD
             {/* TURTLE */}
-=======
-            {/* Turtle */}
->>>>>>> origin/main
             <motion.div
                 className="absolute select-none"
                 animate={{ x: turtleX, y: screen.height - turtleSize - 20 }}
@@ -376,11 +236,7 @@ export default function TurtleEvadeGame() {
                 🐢
             </motion.div>
 
-<<<<<<< HEAD
             {/* TRASH */}
-=======
-            {/* Trash */}
->>>>>>> origin/main
             {trash.map((t) => (
                 <div
                     key={t.id}
@@ -388,95 +244,10 @@ export default function TurtleEvadeGame() {
                         position: "absolute",
                         left: t.x,
                         top: t.y,
-<<<<<<< HEAD
                         fontSize: `${trashSize}px`
                     }}
                 >
                     {t.type}
-=======
-                        fontSize: `${trashSize}px`,
-                        userSelect: "none",
-                    }}
-                >
-                    {t.type}
-                </div>
-            ))}
-
-            {/* GAME OVER — WOBBLING BUBBLE */}
-            {gameOver && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 12 }}
-                        className="pointer-events-auto flex flex-col items-center text-center"
-                    >
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{
-                                scale: 1,
-                                rotate: [0, 2, -2, 2, -1, 1, 0],
-                                y: [0, -4, 3, -2, 1, -3, 0],
-                            }}
-                            transition={{
-                                duration: 5,
-                                repeat: Infinity,
-                                repeatType: "mirror",
-                            }}
-                            style={{
-                                width: 260,
-                                height: 260,
-                                borderRadius: "50%",
-                                background: "rgba(255,255,255,0.25)",
-                                backdropFilter: "blur(8px)",
-                                border: "4px solid rgba(255,255,255,0.7)",
-                                boxShadow: "0 0 25px rgba(255,255,255,0.6)",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                position: "relative",
-                            }}
-                        >
-                            {/* Highlight */}
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: 20,
-                                    left: 35,
-                                    width: 70,
-                                    height: 70,
-                                    borderRadius: "50%",
-                                    background: "rgba(255,255,255,0.45)",
-                                    filter: "blur(8px)",
-                                }}
-                            />
-
-                            <div className="text-5xl mb-2">💥</div>
-                            <div className="text-3xl font-bold text-white">Game Over</div>
-                            <div className="text-xl text-white mt-1 mb-4">Score: {score}</div>
-
-                            <button
-                                onClick={resetGame}
-                                className="bg-white text-black px-5 py-2 rounded-xl font-semibold hover:bg-gray-200 shadow-md"
-                            >
-                                Restart
-                            </button>
-                        </motion.div>
-
-                        {/* Bubble tail */}
-                        <div
-                            style={{
-                                width: 0,
-                                height: 0,
-                                borderLeft: "25px solid transparent",
-                                borderRight: "25px solid transparent",
-                                borderTop: "25px solid rgba(255,255,255,0.25)",
-                                marginTop: -5,
-                            }}
-                        />
-                    </motion.div>
->>>>>>> origin/main
                 </div>
             ))}
 
